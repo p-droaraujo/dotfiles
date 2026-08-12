@@ -44,3 +44,24 @@ opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 -- split windows
 opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
+
+-- Ghostty config is usually ~/.config/ghostty/config (no extension).
+-- Without a filetype, commentstring is empty and Comment.nvim's gcc fails.
+-- Ghostty uses # comments (same as conf), not real YAML syntax.
+vim.filetype.add({
+  pattern = {
+    [".*/ghostty/config"] = "conf",
+    [".*/ghostty/.*%.config"] = "conf",
+    [".*/com%.mitchellh%.ghostty/config"] = "conf", -- macOS app support path
+  },
+})
+
+-- Belt-and-suspenders: force conf + commentstring if path detection missed
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  group = vim.api.nvim_create_augroup("GhosttyFiletype", { clear = true }),
+  pattern = { "*/ghostty/config", "*/ghostty/*.config", "*/com.mitchellh.ghostty/config" },
+  callback = function()
+    vim.bo.filetype = "conf"
+    vim.bo.commentstring = "# %s"
+  end,
+})

@@ -1,44 +1,51 @@
+-- nvim-treesitter "main" branch (required for Neovim 0.12+)
+-- Old API: require("nvim-treesitter.configs").setup({ ensure_installed = ... })
+-- New API: require("nvim-treesitter").install({ ... }) + vim.treesitter.start()
+
 return {
 	"nvim-treesitter/nvim-treesitter",
-	event = { "BufReadPre", "BufNewFile" },
+	branch = "main",
+	lazy = false, -- plugin does not support lazy-loading
 	build = ":TSUpdate",
-	dependencies = {
-		"windwp/nvim-ts-autotag",
-	},
 	config = function()
-		-- import nvim-treesitter plugin
-		local treesitter = require("nvim-treesitter.configs")
+		local ok, nvim_treesitter = pcall(require, "nvim-treesitter")
+		if not ok then
+			vim.notify("nvim-treesitter failed to load", vim.log.levels.ERROR)
+			return
+		end
 
-		-- configure treesitter
-		treesitter.setup({ -- enable syntax highlighting
-			highlight = {
-				enable = true,
-			},
-			-- enable indentation
-			indent = { enable = false },
-			-- enable autotagging (w/ nvim-ts-autotag plugin)
-			autotag = {
-				enable = true,
-			},
-			-- ensure these language parsers are installed
-			ensure_installed = {
-				"json",
-				"javascript",
-				"typescript",
-				"tsx",
-				"yaml",
-				"html",
-				"css",
-				"markdown",
-				"markdown_inline",
-				"bash",
-				"lua",
-				"vim",
-				"dockerfile",
-				"gitignore",
-				"c",
-				"python",
-			},
+		nvim_treesitter.setup({
+			-- parsers install under stdpath("data")/site by default
+			install_dir = vim.fn.stdpath("data") .. "/site",
+		})
+
+		-- Install parsers asynchronously (no-op if already present)
+		nvim_treesitter.install({
+			"json",
+			"javascript",
+			"typescript",
+			"tsx",
+			"yaml",
+			"html",
+			"css",
+			"markdown",
+			"markdown_inline",
+			"bash",
+			"lua",
+			"vim",
+			"vimdoc",
+			"dockerfile",
+			"gitignore",
+			"c",
+			"python",
+		})
+
+		-- Enable treesitter highlighting for every filetype that has a parser
+		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("NvimTreesitterHighlight", { clear = true }),
+			callback = function()
+				pcall(vim.treesitter.start)
+			end,
 		})
 	end,
 }
